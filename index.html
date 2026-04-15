@@ -29,9 +29,9 @@
             max-width: 100%;
             max-height: 100%;
             /* object-fit: contain garante que a proporção não mude e não corte nada */
-            object-fit: contain;
+            object-fit: contain; 
             /* Transição suave de 1 segundo para não piscar na cara do colaborador */
-            transition: opacity 1s ease-in-out;
+            transition: opacity 1s ease-in-out; 
             opacity: 1;
         }
 
@@ -60,113 +60,130 @@
 </head>
 <body>
 
-<div id="slide-container">
-    <!-- Slide Inicial. Coloque o caminho da sua primeira imagem aqui -->
-    <!-- Exemplo: O PowerPoint costuma exportar como Slide1.JPG -->
-    <img id="slide-image" src="imagens/Slide1.JPG" alt="DDS Slide" onerror="handleError()">
-</div>
+    <div id="slide-container">
+        <!-- Slide Inicial. Coloque o caminho da sua primeira imagem aqui -->
+        <!-- Exemplo: O PowerPoint costuma exportar como Slide1.JPG -->
+        <img id="slide-image" src="imagens/Slide1.JPG" alt="DDS Slide">
+    </div>
 
-<!-- Botão de FullScreen para facilitar colocar a TV em tela cheia -->
-<button id="fullscreen-btn" onclick="toggleFullScreen()">Tela Cheia (F11)</button>
+    <!-- Botão de FullScreen para facilitar colocar a TV em tela cheia -->
+    <button id="fullscreen-btn" onclick="toggleFullScreen()">Tela Cheia (F11)</button>
 
-<script>
-    // ==========================================
-    // CONFIGURAÇÕES DA APRESENTAÇÃO
-    // ==========================================
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES DA APRESENTAÇÃO
+        // ==========================================
+        
+        // Quantidade total de slides que o PPTX gerou (conte as imagens na pasta)
+        const totalSlides = 18; 
+        
+        // Tempo que cada slide fica na tela em milissegundos (15000 = 15 segundos)
+        const tempoPorSlide = 15000; 
+        
+        // Caminho e prefixo dos arquivos gerados pelo PowerPoint
+        // Se a pasta for 'imagens' e o arquivo 'Slide1.JPG', fica assim:
+        const pastaEPrefixo = 'imagens/Slide'; 
+        
+        // Extensão do arquivo (Cuidado com Maiúsculas/Minúsculas! O PPTX costuma usar .JPG ou .PNG)
+        const extensao = '.JPG'; 
 
-    // Quantidade total de slides que o PPTX gerou (conte as imagens na pasta)
-    const totalSlides = 18;
+        // ==========================================
 
-    // Tempo que cada slide fica na tela em milissegundos (15000 = 15 segundos)
-    const tempoPorSlide = 15000;
+        let slideAtual = 1;
+        const imgElement = document.getElementById('slide-image');
+        let slideTimer;
 
-    // Caminho e prefixo dos arquivos gerados pelo PowerPoint
-    // Se a pasta for 'imagens' e o arquivo 'Slide1.JPG', fica assim:
-    const pastaEPrefixo = 'imagens/Slide';
+        // Função de fallback segura usando SVG em base64 (não depende de rede externa e evita loop)
+        function aplicarImagemDeErro() {
+            console.error(`Falha ao carregar: ${imgElement.src}`);
+            // Removemos o evento onerror temporariamente para evitar o loop infinito
+            imgElement.onerror = null; 
+            
+            // Cria uma imagem preta de erro nativa
+            const svgErro = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080"%3E%3Crect fill="%23222" width="1920" height="1080"/%3E%3Ctext fill="%23ff5555" font-family="sans-serif" font-size="50" font-weight="bold" x="50%25" y="45%25" text-anchor="middle"%3EERRO: Slide ${slideAtual} nao encontrado.%3C/text%3E%3Ctext fill="%23aaaaaa" font-family="sans-serif" font-size="30" x="50%25" y="55%25" text-anchor="middle"%3EVerifique a pasta 'imagens' e nomes (Case Sensitive).%3C/text%3E%3C/svg%3E`;
+            imgElement.src = svgErro;
+        }
 
-    // Extensão do arquivo (Cuidado com Maiúsculas/Minúsculas! O PPTX costuma usar .JPG ou .PNG)
-    const extensao = '.JPG';
+        // Atribui o erro ao elemento inicial
+        imgElement.onerror = aplicarImagemDeErro;
 
-    // ==========================================
-
-    let slideAtual = 1;
-    const imgElement = document.getElementById('slide-image');
-    let slideTimer;
-
-    // Função principal que troca o slide
-    function irParaProximoSlide() {
-        // 1. Adiciona a classe que tira a opacidade (some com a imagem atual)
-        imgElement.classList.add('fade-out');
-
-        // 2. Espera 1 segundo (tempo do fade no CSS) para trocar a imagem e voltar a opacidade
-        setTimeout(() => {
-            slideAtual++;
-
-            // Se passou do último, volta pro primeiro
-            if (slideAtual > totalSlides) {
-                slideAtual = 1;
-            }
-
-            // Monta o caminho novo (ex: imagens/Slide2.JPG)
-            imgElement.src = `${pastaEPrefixo}${slideAtual}${extensao}`;
-
-            // Remove a classe fade-out, fazendo a nova imagem aparecer suavemente
-            imgElement.classList.remove('fade-out');
-        }, 1000);
-    }
-
-    // Inicia o temporizador automático
-    function iniciarSlideshow() {
-        clearInterval(slideTimer);
-        slideTimer = setInterval(irParaProximoSlide, tempoPorSlide);
-    }
-
-    // Função de fallback para o editor web caso as imagens não existam localmente
-    function handleError() {
-        imgElement.src = `https://via.placeholder.com/1920x1080/0033a0/FFFFFF?text=Slide+${slideAtual}+não+encontrado+(Verifique+a+pasta+imagens)`;
-    }
-
-    // Inicia assim que a página carrega
-    window.onload = iniciarSlideshow;
-
-    // --- EXTRAS DE SUPORTE (Atalhos legais) ---
-
-    // Permite avançar clicando na tela (bom para testar)
-    document.getElementById('slide-container').addEventListener('click', () => {
-        irParaProximoSlide();
-        iniciarSlideshow(); // Reseta o timer pra não pular rápido demais
-    });
-
-    // Setinhas do teclado para frente e para trás
-    document.addEventListener('keydown', (e) => {
-        if(e.key === 'ArrowRight') {
-            irParaProximoSlide();
-            iniciarSlideshow();
-        } else if (e.key === 'ArrowLeft') {
+        // Função principal que troca o slide
+        function irParaProximoSlide() {
+            // 1. Adiciona a classe que tira a opacidade (some com a imagem atual)
             imgElement.classList.add('fade-out');
-            setTimeout(() => {
-                slideAtual--;
-                if (slideAtual < 1) slideAtual = totalSlides;
-                imgElement.src = `${pastaEPrefixo}${slideAtual}${extensao}`;
-                imgElement.classList.remove('fade-out');
-            }, 1000);
-            iniciarSlideshow();
-        }
-    });
 
-    // Função nativa para tela cheia (esconde a barra do navegador na TV)
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.log(`Erro ao tentar modo tela cheia: ${err.message}`);
-            });
-            document.getElementById('fullscreen-btn').style.display = 'none'; // Esconde o botão ao entrar em tela cheia
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
+            // 2. Espera 1 segundo (tempo do fade no CSS) para trocar a imagem e voltar a opacidade
+            setTimeout(() => {
+                slideAtual++;
+                
+                // Se passou do último, volta pro primeiro
+                if (slideAtual > totalSlides) {
+                    slideAtual = 1; 
+                }
+                
+                // Restaura a capacidade de detectar erro para a nova imagem
+                imgElement.onerror = aplicarImagemDeErro;
+
+                // Monta o caminho novo (ex: imagens/Slide2.JPG)
+                imgElement.src = `${pastaEPrefixo}${slideAtual}${extensao}`;
+                
+                // Remove a classe fade-out, fazendo a nova imagem aparecer suavemente
+                imgElement.classList.remove('fade-out');
+            }, 1000); 
+        }
+
+        // Inicia o temporizador automático
+        function iniciarSlideshow() {
+            clearInterval(slideTimer);
+            slideTimer = setInterval(irParaProximoSlide, tempoPorSlide);
+        }
+
+        // Função de fallback para o editor web caso as imagens não existam localmente
+        function handleError() {
+            imgElement.src = `https://via.placeholder.com/1920x1080/0033a0/FFFFFF?text=Slide+${slideAtual}+não+encontrado+(Verifique+a+pasta+imagens)`;
+        }
+
+        // Inicia assim que a página carrega
+        window.onload = iniciarSlideshow;
+
+        // --- EXTRAS DE SUPORTE (Atalhos legais) ---
+        
+        // Permite avançar clicando na tela (bom para testar)
+        document.getElementById('slide-container').addEventListener('click', () => {
+            irParaProximoSlide();
+            iniciarSlideshow(); // Reseta o timer pra não pular rápido demais
+        });
+
+        // Setinhas do teclado para frente e para trás
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight') {
+                irParaProximoSlide();
+                iniciarSlideshow();
+            } else if (e.key === 'ArrowLeft') {
+                imgElement.classList.add('fade-out');
+                setTimeout(() => {
+                    slideAtual--;
+                    if (slideAtual < 1) slideAtual = totalSlides;
+                    imgElement.src = `${pastaEPrefixo}${slideAtual}${extensao}`;
+                    imgElement.classList.remove('fade-out');
+                }, 1000);
+                iniciarSlideshow();
+            }
+        });
+
+        // Função nativa para tela cheia (esconde a barra do navegador na TV)
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Erro ao tentar modo tela cheia: ${err.message}`);
+                });
+                document.getElementById('fullscreen-btn').style.display = 'none'; // Esconde o botão ao entrar em tela cheia
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
             }
         }
-    }
-</script>
+    </script>
 </body>
 </html>
